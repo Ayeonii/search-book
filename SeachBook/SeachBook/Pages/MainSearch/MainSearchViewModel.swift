@@ -16,7 +16,8 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
     }
 
     struct State {
-
+        // todo - 모델 구성 후 변경 예정
+        var items = [String]()
     }
 
     enum Event {

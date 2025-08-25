@@ -98,7 +98,7 @@ final class MainSearchListCell: UITableViewCell {
         titleLabel.text = item.title
         subtitleLabel.text = item.subtitle
         priceLabel.text = item.price
-
-        // TODO: 이미지 URL 로드
+        thumbnailView.setImage(url: item.image, size: CGSize(width: 80, height: 80))?
+            .store(in: &bag)
     }
 }

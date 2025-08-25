@@ -23,7 +23,7 @@ public class ImageLoader {
         return cacheImages.object(forKey: url)
     }
 
-    final func load(url: NSURL) -> AnyPublisher<UIImage?, APIError> {
+    final func load(url: NSURL, targetSize: CGSize?) -> AnyPublisher<UIImage?, APIError> {
         if let cachedImage = image(url: url) {
             return Just(cachedImage)
                 .setFailureType(to: APIError.self)
@@ -39,7 +39,15 @@ public class ImageLoader {
 
                 switch response.statusCode {
                 case (200..<300):
-                    if let image = UIImage(data: output.data) {
+                    var image: UIImage?
+
+                    if let targetSize, targetSize.width > 0, targetSize.height > 0 {
+                        image = self?.downsampling(data: output.data, to: targetSize, scale: UIScreen.main.scale)
+                    } else {
+                        image = UIImage(data: output.data)
+                    }
+
+                    if let image {
                         self?.cacheImages.setObject(image, forKey: url, cost: output.data.count)
                         return image
                     } else {
@@ -58,5 +66,24 @@ public class ImageLoader {
 
     final func clearCache() {
         cacheImages.removeAllObjects()
+    }
+
+    private func downsampling(data: Data, to pointSize: CGSize, scale: CGFloat) -> UIImage? {
+        let maxDimensionInPixels = max(pointSize.width, pointSize.height) * max(scale, 1)
+
+        let cfData = data as CFData
+        guard let source = CGImageSourceCreateWithData(cfData, nil) else { return nil }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: Int(maxDimensionInPixels),
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true
+        ]
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return UIImage(cgImage: cgImage, scale: scale, orientation: .up)
     }
 }

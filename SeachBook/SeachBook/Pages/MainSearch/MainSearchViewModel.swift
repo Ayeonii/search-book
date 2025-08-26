@@ -9,8 +9,8 @@ import Foundation
 import Combine
 
 final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
-                                 MainSearchViewModel.State,
-                                 MainSearchViewModel.Event> {
+                                               MainSearchViewModel.State,
+                                               MainSearchViewModel.Event> {
     enum Action {
         case search(String)
         case paging

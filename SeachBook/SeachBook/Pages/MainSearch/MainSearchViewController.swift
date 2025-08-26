@@ -60,6 +60,9 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
             .sink { [weak self] books in
                 guard let self else { return }
                 tableView.reloadData()
+                if viewModel.currentState.currentPage == 1 {
+                    tableView.scrollToRow(at: IndexPath(row: NSNotFound, section: 0), at: .top, animated: false)
+                }
             }
             .store(in: &bag)
 

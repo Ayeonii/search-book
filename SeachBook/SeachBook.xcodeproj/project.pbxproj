@@ -22,7 +22,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C48AB8702E5A94A000584550 /* Exceptions for "SeachBook" folder in "SeachBook" target */ = {
+		C48AB8B52E5A990D00584550 /* Exceptions for "SeachBook" folder in "SeachBook" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -32,17 +32,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		C48AB84A2E5A949F00584550 /* SeachBook */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				C48AB8702E5A94A000584550 /* Exceptions for "SeachBook" folder in "SeachBook" target */,
-			);
-			path = SeachBook;
-			sourceTree = "<group>";
-		};
 		C48AB8612E5A94A000584550 /* SeachBookTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SeachBookTests;
+			sourceTree = "<group>";
+		};
+		C48AB8AF2E5A990D00584550 /* SeachBook */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C48AB8B52E5A990D00584550 /* Exceptions for "SeachBook" folder in "SeachBook" target */,
+			);
+			path = SeachBook;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -68,7 +68,7 @@
 		C48AB83F2E5A949F00584550 = {
 			isa = PBXGroup;
 			children = (
-				C48AB84A2E5A949F00584550 /* SeachBook */,
+				C48AB8AF2E5A990D00584550 /* SeachBook */,
 				C48AB8612E5A94A000584550 /* SeachBookTests */,
 				C48AB8492E5A949F00584550 /* Products */,
 			);
@@ -99,7 +99,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				C48AB84A2E5A949F00584550 /* SeachBook */,
+				C48AB8AF2E5A990D00584550 /* SeachBook */,
 			);
 			name = SeachBook;
 			packageProductDependencies = (
@@ -220,7 +220,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 28AMFN3XXB;
+				DEVELOPMENT_TEAM = 653TUFJ9Y7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SeachBook/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -247,7 +247,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 28AMFN3XXB;
+				DEVELOPMENT_TEAM = 653TUFJ9Y7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SeachBook/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

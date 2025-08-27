@@ -90,8 +90,8 @@ extension MainSearchViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = viewModel.currentState.books[indexPath.row]
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: MainSearchListCell.reuseIdentifier, for: indexPath) as? MainSearchListCell else {
+        guard let item = viewModel.currentState.books[safe: indexPath.row],
+              let cell = tableView.dequeueReusableCell(withIdentifier: MainSearchListCell.reuseIdentifier, for: indexPath) as? MainSearchListCell else {
             return UITableViewCell()
         }
         cell.configure(with: item)

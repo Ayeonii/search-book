@@ -15,6 +15,7 @@ final class BookDetailViewController: BaseViewController<BookDetailViewModel> {
 
         setupLayout()
         bindViewModel(viewModel)
+        viewModel.handleAction(.setupData)
     }
 
     private func setupLayout() {
@@ -22,6 +23,12 @@ final class BookDetailViewController: BaseViewController<BookDetailViewModel> {
     }
 
     private func bindViewModel(_ viewModel: BookDetailViewModel) {
-
+        viewModel.statePublisher
+            .map { $0.book }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { book in
+                // 화면 구성
+            })
+            .store(in: &bag)
     }
 }

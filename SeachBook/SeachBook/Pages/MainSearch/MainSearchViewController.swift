@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 
 final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
 
@@ -14,6 +15,8 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
     private let tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(MainSearchListCell.self, forCellReuseIdentifier: MainSearchListCell.reuseIdentifier)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 80
         return tableView
     }()
 
@@ -24,6 +27,7 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
         tableView.dataSource = self
         setupLayout()
         setupSearchController()
+        bindViewModel(viewModel)
     }
 
     private func setupLayout() {
@@ -47,22 +51,34 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
     }
+
+    func bindViewModel(_ viewModel: MainSearchViewModel) {
+        viewModel.statePublisher
+            .map { $0.books }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] books in
+                guard let self else { return }
+                tableView.reloadData()
+            }
+            .store(in: &bag)
+    }
 }
 
 extension MainSearchViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        viewModel.sendAction(.search(searchBar.text ?? ""))
         searchBar.resignFirstResponder()
-        // TODO: - 검색 Action
     }
 }
 
 extension MainSearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.currentState.items.count
+        return viewModel.currentState.books.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = viewModel.currentState.items[indexPath.row]
+        let item = viewModel.currentState.books[indexPath.row]
         guard let cell = tableView.dequeueReusableCell(withIdentifier: MainSearchListCell.reuseIdentifier, for: indexPath) as? MainSearchListCell else {
             return UITableViewCell()
         }
@@ -76,9 +92,9 @@ extension MainSearchViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let translation = tableView.panGestureRecognizer.translation(in: tableView.superview)
-        guard translation.y < 0, !viewModel.currentState.items.isEmpty else { return }
+        guard translation.y < 0, !viewModel.currentState.books.isEmpty else { return }
 
-        if indexPath.item > max(viewModel.currentState.items.count - 3, 0) {
+        if indexPath.item > max(viewModel.currentState.books.count - 3, 0) {
             // TODO: - 페이징 Action
         }
     }

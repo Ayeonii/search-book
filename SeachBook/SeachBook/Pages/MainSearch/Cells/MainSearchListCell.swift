@@ -9,6 +9,7 @@ import UIKit
 import Combine
 
 final class MainSearchListCell: UITableViewCell {
+
     static let reuseIdentifier = "MainSearchListCell"
 
     private var bag = Set<AnyCancellable>()
@@ -93,7 +94,11 @@ final class MainSearchListCell: UITableViewCell {
         ])
     }
 
-    func configure(with item: String) { // TODO: - model 구성후 파라미터 타입 변경
-        self.titleLabel.text = item
+    func configure(with item: SearchBookModel) {
+        titleLabel.text = item.title
+        subtitleLabel.text = item.subtitle
+        priceLabel.text = item.price
+
+        // TODO: 이미지 URL 로드
     }
 }

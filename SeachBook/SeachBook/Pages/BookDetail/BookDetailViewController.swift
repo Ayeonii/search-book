@@ -113,6 +113,20 @@ final class BookDetailViewController: BaseViewController<BookDetailViewModel> {
             })
             .store(in: &bag)
 
+        viewModel.statePublisher
+            .compactMap { $0.isLoading }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] isLoading in
+                guard let self else { return }
+                if isLoading {
+                    LoadingView.shared.addProgressView(to: view)
+                } else {
+                    LoadingView.shared.removeProgressView(from: view)
+                }
+            })
+            .store(in: &bag)
+
         viewModel.eventPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in

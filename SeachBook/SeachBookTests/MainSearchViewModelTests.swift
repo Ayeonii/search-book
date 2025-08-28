@@ -204,6 +204,37 @@ final class MainSearchViewModelTests: XCTestCase {
         // then
         wait(for: [exp], timeout: 1.0)
     }
+
+    func test_search_Action이_발생하면_isLoading이_true에서_false로변경된다() {
+        // given
+        let mockAPI = MockITBookAPI()
+        mockAPI.searchResult = .success(searchSuccessResponse)
+        
+        let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
+
+        let loadingSequence = expectation(description: "loading changed")
+        loadingSequence.expectedFulfillmentCount = 2
+
+        var emittedStates: [Bool] = []
+
+        vm.statePublisher
+            .compactMap { $0.isLoading }
+            .removeDuplicates()
+            .dropFirst()
+            .sink(receiveValue: { isLoading in
+                emittedStates.append(isLoading)
+                loadingSequence.fulfill()
+            })
+            .store(in: &bag)
+
+        vm.handleAction(.search("mongodb"))
+
+        // then
+        wait(for: [loadingSequence], timeout: 1.0)
+
+        XCTAssertEqual(emittedStates, [true, false])
+        XCTAssertFalse(vm.currentState.books.isEmpty)
+    }
 }
 
 extension MainSearchViewModelTests {

@@ -17,6 +17,7 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
         tableView.register(MainSearchListCell.self, forCellReuseIdentifier: MainSearchListCell.reuseIdentifier)
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 80
+        tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
@@ -32,8 +33,8 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
 
     private func setupLayout() {
         view.backgroundColor = .systemBackground
+
         view.addSubview(tableView)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
@@ -53,6 +54,20 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
     }
 
     func bindViewModel(_ viewModel: MainSearchViewModel) {
+        viewModel.statePublisher
+            .compactMap { $0.isLoading }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] isLoading in
+                guard let self else { return }
+                if isLoading {
+                    LoadingView.shared.addProgressView(to: view)
+                } else {
+                    LoadingView.shared.removeProgressView(from: view)
+                }
+            })
+            .store(in: &bag)
+
         viewModel.eventPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in

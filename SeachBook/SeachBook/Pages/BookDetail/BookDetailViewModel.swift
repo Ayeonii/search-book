@@ -19,6 +19,7 @@ final class BookDetailViewModel: BaseViewModel<BookDetailViewModel.Action,
     }
 
     enum Event {
+        case showAlert(String)
     }
 
     struct Depedency {
@@ -45,9 +46,9 @@ extension BookDetailViewModel {
     private func setupData() {
         dependency.api.getBookDetail(isbn13: dependency.isbn13)
             .receive(on: DispatchQueue.main)
-            .sink {completion in
+            .sink { [weak self] completion in
                 if case .failure = completion {
-                    // 에러 핸들링
+                    self?.sendEvent(.showAlert("일시적인 에러가 발생하였습니다."))
                 }
             } receiveValue: { [weak self] response in
                 self?.setState { $0.book = response.toBookDetailModel }

@@ -62,6 +62,18 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
                 tableView.reloadData()
             }
             .store(in: &bag)
+
+        viewModel.eventPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                switch event {
+                case let .showAlert(message):
+                    let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "확인", style: .default))
+                    self?.present(alertController, animated: true)
+                }
+            }
+            .store(in: &bag)
     }
 }
 

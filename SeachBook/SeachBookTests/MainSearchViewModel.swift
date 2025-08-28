@@ -50,6 +50,41 @@ final class MainSearchViewModelTests: XCTestCase {
         // then
         wait(for: [exp], timeout: 1.0)
     }
+
+    func test_searchAction_발생시_Fail일_경우_showAlert이벤트발생_state_books는_방출되지_않는다() {
+        // given
+        let mockAPI = MockITBookAPI()
+        mockAPI.searchResult = .failure(APIError.server(500, nil))
+
+        let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
+        let expAlert = expectation(description: "show error alert")
+
+        let expNoStateChange = expectation(description: "no state change on failure")
+        expNoStateChange.isInverted = true
+
+        vm.eventPublisher
+            .sink { event in
+                if case let .showAlert(message) = event {
+                    XCTAssertEqual(message, "일시적인 에러가 발생하였습니다.")
+                    expAlert.fulfill()
+                }
+            }
+            .store(in: &bag)
+
+        vm.statePublisher
+            .map { $0.books }
+            .dropFirst()
+            .sink { books in
+                expNoStateChange.fulfill()
+            }
+            .store(in: &bag)
+
+        // when
+        vm.handleAction(.search("mongodb"))
+
+        // then
+        wait(for: [expAlert, expNoStateChange], timeout: 1.0)
+    }
 }
 
 extension MainSearchViewModelTests {

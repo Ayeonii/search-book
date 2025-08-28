@@ -20,7 +20,7 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
     }
 
     enum Event {
-        
+        case showAlert(String)
     }
 
     struct Depedency {
@@ -52,13 +52,13 @@ extension MainSearchViewModel {
 
         dependency.api.searchBooks(text: noSpaceText, page: 1)
             .receive(on: DispatchQueue.main)
-            .sink { completion in
-                if case let .failure(error) = completion {
-                    // TODO: 에러 핸들링
+            .sink { [weak self] completion in
+                if case .failure = completion {
+                    self?.sendEvent(.showAlert("일시적인 에러가 발생하였습니다."))
                 }
             } receiveValue: { [weak self] response in
                 if response.total == "0" {
-                    // TODO: 검색 결과 없음 안내
+                    self?.sendEvent(.showAlert("검색결과가 없습니다."))
                 } else {
                     self?.setState { state in
                         var newState = state

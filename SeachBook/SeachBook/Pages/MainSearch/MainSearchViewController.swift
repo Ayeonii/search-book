@@ -107,7 +107,7 @@ extension MainSearchViewController: UITableViewDataSource, UITableViewDelegate {
         guard translation.y < 0, !viewModel.currentState.books.isEmpty else { return }
 
         if indexPath.item > max(viewModel.currentState.books.count - 3, 0) {
-            // TODO: - 페이징 Action
+            viewModel.sendAction(.paging)
         }
     }
 }

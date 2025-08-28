@@ -55,13 +55,15 @@ class BaseViewModel<A, S, E>: ViewModelType {
     func handleAction(_ action: Action) { }
 
     // MARK: - Protected helpers
-    func setState(_ update: @escaping (State) -> State) {
+    func setState(_ updates: (inout State) -> Void) {
+        var newState = stateSubject.value
+        updates(&newState)
+
         if Thread.isMainThread {
-            stateSubject.send(update(stateSubject.value))
+            stateSubject.send(newState)
         } else {
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.stateSubject.send(update(self.stateSubject.value))
+                self?.stateSubject.send(newState)
             }
         }
     }

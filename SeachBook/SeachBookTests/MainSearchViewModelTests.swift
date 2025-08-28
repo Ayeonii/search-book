@@ -35,6 +35,7 @@ final class MainSearchViewModelTests: XCTestCase {
 
         vm.statePublisher
             .map { $0.books }
+            .removeDuplicates()
             .dropFirst()
             .sink { books in
                 XCTAssertEqual(books.count, 2)
@@ -73,6 +74,7 @@ final class MainSearchViewModelTests: XCTestCase {
 
         vm.statePublisher
             .map { $0.books }
+            .removeDuplicates()
             .dropFirst()
             .sink { books in
                 expNoStateChange.fulfill()
@@ -84,6 +86,75 @@ final class MainSearchViewModelTests: XCTestCase {
 
         // then
         wait(for: [expAlert, expNoStateChange], timeout: 1.0)
+    }
+
+    func test_searchAction_발생후_Paging_action발생시_books에_추가된다() {
+        // given
+        let mockAPI = MockITBookAPI()
+        let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
+
+        mockAPI.searchResult = .success(searchSuccessResponse)
+        let page1Loaded = expectation(description: "page1 loaded")
+        vm.statePublisher
+            .dropFirst()
+            .filter { !$0.isLoading && $0.currentPage == 1 }
+            .first()
+            .sink { _ in page1Loaded.fulfill() }
+            .store(in: &bag)
+
+        vm.handleAction(.search("mongodb"))
+        wait(for: [page1Loaded], timeout: 1.0)
+
+        mockAPI.searchResult = .success(searchSuccessPagingResponse)
+        let page2Loaded = expectation(description: "page2 appended")
+        vm.statePublisher
+            .dropFirst()
+            .filter { !$0.isLoading && $0.currentPage == 2 }
+            .first()
+            .sink { _ in page2Loaded.fulfill() }
+            .store(in: &bag)
+
+        vm.handleAction(.paging)
+
+        // then
+        wait(for: [page2Loaded], timeout: 1.0)
+
+        let currentState = vm.currentState
+        XCTAssertEqual(currentState.currentPage, 2)
+        XCTAssertEqual(currentState.books.count, 3)
+        XCTAssertEqual(currentState.books.last?.isbn13, "978161609")
+    }
+
+    func test_paging_Action은_isLoading이_true일_경우_무시된다() {
+        // given
+        let mockAPI = MockITBookAPI()
+        let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
+
+        vm.setState {
+            $0.inputText = "mongodb"
+            $0.isLoading = true
+            $0.currentPage = 1
+            $0.books = []
+        }
+
+        let noChange = expectation(description: "paging ignored while loading")
+        noChange.isInverted = true
+
+        vm.statePublisher
+            .dropFirst()
+            .sink { _ in
+                noChange.fulfill()
+            }
+            .store(in: &bag)
+        vm.handleAction(.paging)
+
+        // then
+        wait(for: [noChange], timeout: 0.3)
+
+        let currentState = vm.currentState
+        XCTAssertTrue(currentState.isLoading)
+        XCTAssertEqual(currentState.currentPage, 1)
+        XCTAssertTrue(currentState.books.isEmpty)
     }
 }
 
@@ -110,6 +181,26 @@ extension MainSearchViewModelTests {
                     "price": "$6.88",
                     "image": "https://itbook.store/img/books/9781449310370.png",
                     "url": "https://itbook.store/books/9781449310370"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+    }
+
+    private var searchSuccessPagingResponse: Data {
+        return """
+        {
+            "error": "0",
+            "total": "80",
+            "page": "2",
+            "books": [
+                {
+                    "title": "MongoDB in Action, 3nd Edition",
+                    "subtitle": "Covers MongoDB version 3.0",
+                    "isbn13": "978161609",
+                    "price": "$19.99",
+                    "image": "https://itbook.store/img/books/9781617291609.png",
+                    "url": "https://itbook.store/books/9781617291609"
                 }
             ]
         }

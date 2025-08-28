@@ -75,6 +75,12 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
             }
             .store(in: &bag)
     }
+
+    private func routeToDetail(bookISBN13: String) {
+        let viewModel = BookDetailViewModel(dependency: .init(isbn13: bookISBN13))
+        let viewController = BookDetailViewController(viewModel: viewModel)
+        navigationController?.pushViewController(viewController, animated: true)
+    }
 }
 
 extension MainSearchViewController: UISearchBarDelegate {
@@ -99,7 +105,8 @@ extension MainSearchViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // TODO: - 아이템 클릭 Action
+        guard let item = viewModel.currentState.books[safe: indexPath.row] else { return }
+        routeToDetail(bookISBN13: item.isbn13)
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {

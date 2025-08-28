@@ -106,11 +106,55 @@ final class BookDetailViewController: BaseViewController<BookDetailViewModel> {
 
     private func bindViewModel(_ viewModel: BookDetailViewModel) {
         viewModel.statePublisher
-            .map { $0.book }
+            .compactMap { $0.book }
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { book in
-                // 화면 구성
+            .sink(receiveValue: { [weak self] book in
+                self?.updateViews(model: book)
             })
             .store(in: &bag)
+    }
+
+    private func updateViews(model: BookDetailModel) {
+        imageView.setImage(url: model.imageURL)?
+            .store(in: &bag)
+
+        titleView.configure(type: .text(model.title))
+        subtitleView.configure(type: .text(model.subtitle))
+        descriptionView.configure(type: .text(model.desc))
+        authorsAndPublisherView.configure(type: .text(model.authors + "/" + model.publisher))
+        languageView.configure(type: .text(model.language))
+        isbn10View.configure(type: .text(model.isbn10))
+        isbn13View.configure(type: .text(model.isbn13))
+        totalPagesView.configure(type: .text(model.totalPages))
+        publishedyearView.configure(type: .text(model.publishedyear))
+        ratingsView.configure(type: .text(model.rating))
+        priceView.configure(type: .text(model.price))
+        webURLView.configure(type: .link(model.webURL), delegate: self)
+
+        if let pdfDict = model.pdf {
+            for pdf in pdfDict {
+                let pdfView = BookDetailInfoRowView(title: pdf.key)
+                pdfView.configure(type: .link(pdf.value), delegate: self)
+                contentStackView.addArrangedSubview(pdfView)
+            }
+        }
+    }
+}
+
+extension BookDetailViewController: BookDetailInfoRowViewDelegate {
+    func didTapLink(_ view: BookDetailInfoRowView, link: String) {
+        let url: URL?
+
+        if #available(iOS 17.0, *) {
+            url = URL(string: link, encodingInvalidCharacters: false)
+
+        } else {
+            url = URL(string: link)
+        }
+
+        guard let url else { return }
+        let safari = SFSafariViewController(url: url)
+        safari.modalPresentationStyle = .overFullScreen
+        present(safari, animated: true)
     }
 }

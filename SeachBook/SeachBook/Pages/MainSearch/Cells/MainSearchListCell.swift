@@ -49,6 +49,22 @@ final class MainSearchListCell: UITableViewCell {
         return label
     }()
 
+    private let isbn13Label: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = .systemBlue
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let urlLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = .systemBlue
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupLayout()
@@ -67,10 +83,12 @@ final class MainSearchListCell: UITableViewCell {
         titleLabel.text = nil
         subtitleLabel.text = nil
         priceLabel.text = nil
+        isbn13Label.text = nil
+        urlLabel.text = nil
     }
 
     private func setupLayout() {
-        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, priceLabel])
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, priceLabel, isbn13Label, urlLabel])
         textStack.axis = .vertical
         textStack.spacing = 4
         textStack.translatesAutoresizingMaskIntoConstraints = false
@@ -98,7 +116,10 @@ final class MainSearchListCell: UITableViewCell {
         titleLabel.text = item.title
         subtitleLabel.text = item.subtitle
         priceLabel.text = item.price
-        thumbnailView.setImage(url: item.image, size: CGSize(width: 80, height: 80))?
+        isbn13Label.text = item.isbn13
+        urlLabel.text = item.url
+        
+        thumbnailView.setImage(url: item.imageURL, size: CGSize(width: 80, height: 80))?
             .store(in: &bag)
     }
 }

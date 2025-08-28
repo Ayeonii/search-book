@@ -12,15 +12,18 @@ struct SearchBookModel: Equatable {
     let subtitle: String
     let isbn13: String
     let price: String
-    let image: String
+    let imageURL: String
+    let url: String
 }
 
 extension ITBookSearchResponseModel.Book {
     var toBookModel: SearchBookModel {
-        return .init(title: self.title,
-                     subtitle: self.subtitle,
-                     isbn13: self.isbn13,
-                     price: self.price,
-                     image: self.image)
+        return .init(title: title,
+                     subtitle: subtitle,
+                     isbn13: isbn13,
+                     price: price,
+                     imageURL: image,
+                     url: url
+        )
     }
 }

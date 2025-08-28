@@ -21,6 +21,7 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
         var isLoading: Bool = false
         var inputText: String?
         var currentPage: Int = 1
+        var hasMorePage: Bool = true
     }
 
     enum Event {
@@ -33,6 +34,10 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
 
     private let dependency: Depedency
 
+    private var enablePaging: Bool {
+        return !currentState.isLoading && currentState.hasMorePage
+    }
+
     init(dependency: Depedency) {
         self.dependency = dependency
         super.init(initialState: .init())
@@ -44,7 +49,7 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
             searchAction(text: text, page: 1)
 
         case .paging:
-            guard let text = currentState.inputText, !currentState.isLoading else { return }
+            guard let text = currentState.inputText, enablePaging else { return }
             searchAction(text: text, page: currentState.currentPage + 1)
         }
     }
@@ -70,20 +75,23 @@ extension MainSearchViewModel {
                     self?.setState { $0.isLoading = false }
                 }
             } receiveValue: { [weak self] response in
-                if response.total == "0" {
+                let isFirstPage = response.page == "1"
+
+                if isFirstPage, response.total == "0" {
                     self?.sendEvent(.showAlert("검색결과가 없습니다."))
                     self?.setState { $0.isLoading = false }
                 } else {
                     self?.setState {
                         let newBooks = response.books.map { $0.toBookModel }
-                        if page > 1 {
-                            $0.books.append(contentsOf: newBooks)
-                        } else {
+                        if isFirstPage {
                             $0.books = newBooks
+                        } else {
+                            $0.books.append(contentsOf: newBooks)
                         }
 
                         $0.isLoading = false
                         $0.currentPage = Int(response.page) ?? 1
+                        $0.hasMorePage = Int(response.total) ?? 0 > $0.books.count
                     }
                 }
             }

@@ -149,12 +149,41 @@ final class MainSearchViewModelTests: XCTestCase {
         vm.handleAction(.paging)
 
         // then
-        wait(for: [noChange], timeout: 0.3)
+        wait(for: [noChange], timeout: 1.0)
 
         let currentState = vm.currentState
         XCTAssertTrue(currentState.isLoading)
         XCTAssertEqual(currentState.currentPage, 1)
         XCTAssertTrue(currentState.books.isEmpty)
+    }
+
+    func test_searchAction시_로딩이끝난_시점에_응답의_total값과_갱신된_books수가_같다면_hasMorePage값은_true에서_false가_된다() {
+        // given
+        let mockAPI = MockITBookAPI()
+        mockAPI.searchResult = .success(searchSuccessLastPageResponse)
+
+        let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
+        XCTAssertTrue(vm.currentState.hasMorePage)
+
+        let exp = expectation(description: "loaded and hasMorePage updated to false")
+
+        vm.statePublisher
+            .dropFirst()
+            .filter { !$0.isLoading }
+            .first()
+            .sink { state in
+                XCTAssertEqual(state.books.count, 1)
+                XCTAssertEqual(state.currentPage, 1)
+                XCTAssertFalse(state.hasMorePage)
+                exp.fulfill()
+            }
+            .store(in: &bag)
+
+        // when
+        vm.handleAction(.search("mongodb"))
+
+        // then
+        wait(for: [exp], timeout: 1.0)
     }
 }
 
@@ -193,6 +222,26 @@ extension MainSearchViewModelTests {
             "error": "0",
             "total": "80",
             "page": "2",
+            "books": [
+                {
+                    "title": "MongoDB in Action, 3nd Edition",
+                    "subtitle": "Covers MongoDB version 3.0",
+                    "isbn13": "978161609",
+                    "price": "$19.99",
+                    "image": "https://itbook.store/img/books/9781617291609.png",
+                    "url": "https://itbook.store/books/9781617291609"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+    }
+
+    private var searchSuccessLastPageResponse: Data {
+        return """
+        {
+            "error": "0",
+            "total": "1",
+            "page": "1",
             "books": [
                 {
                     "title": "MongoDB in Action, 3nd Edition",

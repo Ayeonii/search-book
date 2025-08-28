@@ -26,6 +26,8 @@ final class MainSearchViewModel: BaseViewModel<MainSearchViewModel.Action,
 
     enum Event {
         case showAlert(String)
+        case reload
+        case insertItems([Int])
     }
 
     struct Depedency {
@@ -75,13 +77,15 @@ extension MainSearchViewModel {
                     self?.setState { $0.isLoading = false }
                 }
             } receiveValue: { [weak self] response in
+                guard let self else { return }
                 let isFirstPage = response.page == "1"
 
                 if isFirstPage, response.total == "0" {
-                    self?.sendEvent(.showAlert("검색결과가 없습니다."))
-                    self?.setState { $0.isLoading = false }
+                    self.sendEvent(.showAlert("검색결과가 없습니다."))
+                    self.setState { $0.isLoading = false }
                 } else {
-                    self?.setState {
+                    let prevBooks = currentState.books
+                    self.setState {
                         let newBooks = response.books.map { $0.toBookModel }
                         if isFirstPage {
                             $0.books = newBooks
@@ -92,6 +96,14 @@ extension MainSearchViewModel {
                         $0.isLoading = false
                         $0.currentPage = Int(response.page) ?? 1
                         $0.hasMorePage = Int(response.total) ?? 0 > $0.books.count
+                    }
+
+                    if isFirstPage {
+                        self.sendEvent(.reload)
+                    } else {
+                        let indexes = (prevBooks.count..<currentState.books.count).map { $0 }
+                        guard indexes.count > 0 else { return }
+                        self.sendEvent(.insertItems(indexes))
                     }
                 }
             }

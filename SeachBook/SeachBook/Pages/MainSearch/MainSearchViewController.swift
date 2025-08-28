@@ -53,19 +53,6 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
     }
 
     func bindViewModel(_ viewModel: MainSearchViewModel) {
-        viewModel.statePublisher
-            .map { $0.books }
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] books in
-                guard let self else { return }
-                tableView.reloadData()
-                if viewModel.currentState.currentPage == 1 {
-                    tableView.scrollToRow(at: IndexPath(row: NSNotFound, section: 0), at: .top, animated: false)
-                }
-            }
-            .store(in: &bag)
-
         viewModel.eventPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
@@ -74,6 +61,16 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
                     let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
                     alertController.addAction(UIAlertAction(title: "확인", style: .default))
                     self?.present(alertController, animated: true)
+
+                case .reload:
+                    self?.tableView.scrollToRow(at: IndexPath(row: NSNotFound, section: 0), at: .top, animated: false)
+                    self?.tableView.reloadData()
+
+                case let .insertItems(indexes):
+                    let indexPaths = indexes.map { IndexPath(row: $0, section: 0) }
+                    self?.tableView.performBatchUpdates {
+                        self?.tableView.insertRows(at: indexPaths, with: .none)
+                    }
                 }
             }
             .store(in: &bag)

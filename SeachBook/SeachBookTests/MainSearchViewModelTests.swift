@@ -25,23 +25,23 @@ final class MainSearchViewModelTests: XCTestCase {
         bag = nil
     }
 
-    func test_searchAction_발생시_정상응답일_경우_state_books에_응답값이_할당된다() {
+    func test_searchAction_발생시_정상응답일_경우_state_books에_응답값이_할당되고_reload이벤트가_방출된다() {
         // given
         let mockAPI = MockITBookAPI()
         mockAPI.searchResult = .success(searchSuccessResponse)
 
         let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
-        let exp = expectation(description: "items updated")
+        let exp = expectation(description: "items reload")
 
-        vm.statePublisher
-            .map { $0.books }
-            .removeDuplicates()
-            .dropFirst()
-            .sink { books in
-                XCTAssertEqual(books.count, 2)
-                XCTAssertEqual(books[0].isbn13, "9781617291609")
-                XCTAssertEqual(books[1].isbn13, "9781449310370")
-                exp.fulfill()
+        vm.eventPublisher
+            .sink { event in
+                switch event {
+                case .reload:
+                    exp.fulfill()
+
+                default:
+                    return
+                }
             }
             .store(in: &bag)
 
@@ -50,9 +50,14 @@ final class MainSearchViewModelTests: XCTestCase {
 
         // then
         wait(for: [exp], timeout: 1.0)
+
+        let currentStateBooks = vm.currentState.books
+        XCTAssertEqual(currentStateBooks.count, 2)
+        XCTAssertEqual(currentStateBooks[0].isbn13, "9781617291609")
+        XCTAssertEqual(currentStateBooks[1].isbn13, "9781449310370")
     }
 
-    func test_searchAction_발생시_Fail일_경우_showAlert이벤트발생_state_books는_방출되지_않는다() {
+    func test_searchAction_발생시_Fail일_경우_showAlert이벤트발생_reload_이벤트는_방출되지_않는다() {
         // given
         let mockAPI = MockITBookAPI()
         mockAPI.searchResult = .failure(APIError.server(500, nil))
@@ -65,27 +70,29 @@ final class MainSearchViewModelTests: XCTestCase {
 
         vm.eventPublisher
             .sink { event in
-                if case let .showAlert(message) = event {
+                switch event {
+                case let .showAlert(message):
                     XCTAssertEqual(message, "일시적인 에러가 발생하였습니다.")
                     expAlert.fulfill()
+
+                case .reload:
+                    expNoStateChange.fulfill()
+
+                default:
+                    return
                 }
             }
             .store(in: &bag)
 
-        vm.statePublisher
-            .map { $0.books }
-            .removeDuplicates()
-            .dropFirst()
-            .sink { books in
-                expNoStateChange.fulfill()
-            }
-            .store(in: &bag)
 
         // when
         vm.handleAction(.search("mongodb"))
 
         // then
         wait(for: [expAlert, expNoStateChange], timeout: 1.0)
+
+        let currentStateBooks = vm.currentState.books
+        XCTAssertEqual(currentStateBooks.count, 0)
     }
 
     func test_searchAction_발생후_Paging_action발생시_books에_추가된다() {
@@ -94,30 +101,42 @@ final class MainSearchViewModelTests: XCTestCase {
         let vm = MainSearchViewModel(dependency: .init(api: mockAPI))
 
         mockAPI.searchResult = .success(searchSuccessResponse)
-        let page1Loaded = expectation(description: "page1 loaded")
-        vm.statePublisher
-            .dropFirst()
-            .filter { !$0.isLoading && $0.currentPage == 1 }
-            .first()
-            .sink { _ in page1Loaded.fulfill() }
+        let expFirstPage = expectation(description: "FirstPage loaded")
+        vm.eventPublisher
+            .sink { event in
+                switch event {
+                case .reload:
+                    expFirstPage.fulfill()
+
+                default:
+                    return
+                }
+            }
             .store(in: &bag)
 
         vm.handleAction(.search("mongodb"))
-        wait(for: [page1Loaded], timeout: 1.0)
+        wait(for: [expFirstPage], timeout: 1.0)
 
         mockAPI.searchResult = .success(searchSuccessPagingResponse)
-        let page2Loaded = expectation(description: "page2 appended")
-        vm.statePublisher
-            .dropFirst()
-            .filter { !$0.isLoading && $0.currentPage == 2 }
-            .first()
-            .sink { _ in page2Loaded.fulfill() }
+        let expSecondPage = expectation(description: "SecondPage loaded")
+
+        vm.eventPublisher
+            .sink { event in
+                switch event {
+                case let .insertItems(indexes):
+                    XCTAssertEqual(indexes, [2])
+                    expSecondPage.fulfill()
+
+                default:
+                    return
+                }
+            }
             .store(in: &bag)
 
         vm.handleAction(.paging)
 
         // then
-        wait(for: [page2Loaded], timeout: 1.0)
+        wait(for: [expSecondPage], timeout: 1.0)
 
         let currentState = vm.currentState
         XCTAssertEqual(currentState.currentPage, 2)

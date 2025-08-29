@@ -78,8 +78,10 @@ final class MainSearchViewController: BaseViewController<MainSearchViewModel> {
                     self?.present(alertController, animated: true)
 
                 case .reload:
-                    self?.tableView.scrollToRow(at: IndexPath(row: NSNotFound, section: 0), at: .top, animated: false)
                     self?.tableView.reloadData()
+                    DispatchQueue.main.async {
+                        self?.tableView.scrollToRow(at: IndexPath(row: NSNotFound, section: 0), at: .top, animated: false)
+                    }
 
                 case let .insertItems(indexes):
                     let indexPaths = indexes.map { IndexPath(row: $0, section: 0) }

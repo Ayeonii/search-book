@@ -39,7 +39,7 @@ struct HttpAPIManager {
         } catch let apiError as APIError {
             return Fail(error: apiError).eraseToAnyPublisher()
         } catch {
-            return Fail(error: APIError.unknowned(error.localizedDescription)).eraseToAnyPublisher()
+            return Fail(error: APIError.unknown(error.localizedDescription)).eraseToAnyPublisher()
         }
     }
 
@@ -81,7 +81,7 @@ struct HttpAPIManager {
             .tryMap { output -> Data in
                 guard let httpResponse = output.response as? HTTPURLResponse,
                       httpResponse.statusCode == 200 else {
-                    throw APIError.unknowned("No Server Response")
+                    throw APIError.unknown("No Server Response")
                 }
 
                 let responseData = output.data
@@ -106,7 +106,7 @@ struct HttpAPIManager {
                 case is DecodingError:
                     return .decodingError(error)
                 default:
-                    return .unknowned(error.localizedDescription)
+                    return .unknown(error.localizedDescription)
                 }
             }
             .eraseToAnyPublisher()

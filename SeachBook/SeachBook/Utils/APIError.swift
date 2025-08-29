@@ -15,7 +15,7 @@ enum APIError: Error {
     case convertImageFail
     case server(Int, String?)
     case client(Int, String?)
-    case unknowned(String)
+    case unknown(String)
 }
 
 extension APIError: LocalizedError {
@@ -34,7 +34,7 @@ extension APIError: LocalizedError {
         case let .server(_, msg),
              let .client(_, msg):
             return "description: " + (msg ?? "")
-        case let .unknowned(msg):
+        case let .unknown(msg):
             return "description: " + msg
         }
     }
@@ -54,7 +54,7 @@ extension APIError: LocalizedError {
         case .server,
              .client:
             return "Retry"
-        case .unknowned:
+        case .unknown:
             return ""
         }
     }

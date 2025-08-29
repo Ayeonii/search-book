@@ -19,6 +19,52 @@ public class ImageLoader {
         return cache
     }()
 
+    private lazy var diskCacheURL: URL? = {
+        guard let path = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let url = path.appendingPathComponent("ImageCache", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+        return url
+    }()
+
+    private func safeFileName(from url: NSURL) -> String? {
+        guard let urlString = url.absoluteString else { return url.lastPathComponent }
+        var safeName = urlString
+        let invalidChars = CharacterSet(charactersIn: "/\\:*?\"<>|")
+        if var encodedString = urlString.addingPercentEncoding(withAllowedCharacters: invalidChars.inverted) {
+            let extention = (url as URL).pathExtension
+            if !extention.isEmpty && !encodedString.lowercased().hasSuffix(".\(extention.lowercased())") {
+                encodedString += ".\(extention)"
+            }
+
+            safeName = encodedString
+        }
+
+        return safeName
+    }
+
+    private func diskCachePath(for url: NSURL) -> URL? {
+        guard let diskCacheURL, let name = safeFileName(from: url) else { return nil }
+        return diskCacheURL.appendingPathComponent(name)
+    }
+
+    private func loadFromDisk(for url: NSURL) -> UIImage? {
+        guard let fileURL = diskCachePath(for: url),
+              FileManager.default.fileExists(atPath: fileURL.path),
+              let data = try? Data(contentsOf: fileURL) else { return nil }
+        return UIImage(data: data)
+    }
+
+    private func storeToDisk(data: Data, for url: NSURL) {
+        guard let fileURL = diskCachePath(for: url) else { return }
+        do {
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            print("Disk cache store error:", error)
+        }
+    }
+
     private final func image(url: NSURL) -> UIImage? {
         return cacheImages.object(forKey: url)
     }
@@ -26,6 +72,13 @@ public class ImageLoader {
     final func load(url: NSURL, targetSize: CGSize?) -> AnyPublisher<UIImage?, APIError> {
         if let cachedImage = image(url: url) {
             return Just(cachedImage)
+                .setFailureType(to: APIError.self)
+                .eraseToAnyPublisher()
+        }
+
+        if let diskCachedImage = loadFromDisk(for: url) {
+            cacheImages.setObject(diskCachedImage, forKey: url)
+            return Just(diskCachedImage)
                 .setFailureType(to: APIError.self)
                 .eraseToAnyPublisher()
         }
@@ -49,6 +102,7 @@ public class ImageLoader {
 
                     if let image {
                         self?.cacheImages.setObject(image, forKey: url, cost: output.data.count)
+                        self?.storeToDisk(data: output.data, for: url)
                         return image
                     } else {
                         throw APIError.convertImageFail
@@ -66,6 +120,10 @@ public class ImageLoader {
 
     final func clearCache() {
         cacheImages.removeAllObjects()
+        if let diskCacheURL = diskCacheURL {
+            try? FileManager.default.removeItem(at: diskCacheURL)
+            try? FileManager.default.createDirectory(at: diskCacheURL, withIntermediateDirectories: true, attributes: nil)
+        }
     }
 
     private func downsampling(data: Data, to pointSize: CGSize, scale: CGFloat) -> UIImage? {
